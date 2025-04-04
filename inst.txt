@@ -1,0 +1,1 @@
+create a folder template and save index.html inside it

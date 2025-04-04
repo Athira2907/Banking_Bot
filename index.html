@@ -1,0 +1,348 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Banking Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .login-container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .banking-container {
+            display: none;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        .user-message {
+            background-color: #e1f5fe;
+            color: #0277bd;
+            padding: 10px 15px;
+            border-radius: 15px 15px 0 15px;
+            margin: 10px 0;
+            max-width: 70%;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #eeeeee;
+            color: #424242;
+            padding: 10px 15px;
+            border-radius: 15px 15px 15px 0;
+            margin: 10px 0;
+            max-width: 70%;
+        }
+        .input-group {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .chat-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        .send-btn {
+            border-radius: 0 4px 4px 0;
+        }
+        .logout-btn {
+            background-color: #e74c3c;
+            margin-top: 15px;
+        }
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+        .suggestion {
+            color: #3498db;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            text-decoration: underline;
+        }
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Banking Assistant</h1>
+        
+        <!-- Login Form -->
+        <div id="login-container" class="login-container">
+            <h2>Login to Your Account</h2>
+            <div class="input-group">
+                <input id="username" type="text" placeholder="Username">
+            </div>
+            <div class="input-group">
+                <input id="password" type="password" placeholder="Password">
+            </div>
+            <p style="font-size: 12px; color: #666;">Demo: username = 'demo_user', password = 'password123'</p>
+            <button id="login-btn">Sign In</button>
+        </div>
+        
+        <!-- Banking Interface -->
+        <div id="banking-container" class="banking-container">
+            <div class="grid">
+                <!-- Account Info -->
+                <div class="card">
+                    <h2>Account Information</h2>
+                    <p>Welcome back, <span id="user-fullname"></span></p>
+                    <p>Current Balance: <span id="user-balance" class="balance"></span></p>
+                    <button id="logout-btn" class="logout-btn">Logout</button>
+                </div>
+                
+                <!-- Chat Interface -->
+                <div class="card">
+                    <h2>Banking Assistant</h2>
+                    <div id="chat-container" class="chat-container">
+                        <div class="bot-message">
+                            Hello! I'm your banking assistant. How can I help you today?
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input id="message-input" type="text" class="chat-input" placeholder="Ask about your account, transfers, etc.">
+                        <button id="send-btn" class="send-btn">Send</button>
+                    </div>
+                    <div>
+                        <p>Try asking:</p>
+                        <p class="suggestion" onclick="suggestQuery(this)">What's my account balance?</p>
+                        <p class="suggestion" onclick="suggestQuery(this)">Show my recent transactions</p>
+                        <p class="suggestion" onclick="suggestQuery(this)">Transfer $50 to John</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentUser = null;
+        
+        // DOM Elements
+        const loginContainer = document.getElementById('login-container');
+        const bankingContainer = document.getElementById('banking-container');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const userFullName = document.getElementById('user-fullname');
+        const userBalance = document.getElementById('user-balance');
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        
+        // Event Listeners
+        loginBtn.addEventListener('click', handleLogin);
+        logoutBtn.addEventListener('click', handleLogout);
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Functions
+        async function handleLogin() {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    showBankingInterface();
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('An error occurred during login');
+            }
+        }
+        
+        function handleLogout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => {
+                    currentUser = null;
+                    loginContainer.style.display = 'block';
+                    bankingContainer.style.display = 'none';
+                    usernameInput.value = '';
+                    passwordInput.value = '';
+                    chatContainer.innerHTML = '<div class="bot-message">Hello! I\'m your banking assistant. How can I help you today?</div>';
+                })
+                .catch(error => {
+                    console.error('Logout error:', error);
+                });
+        }
+        
+        function showBankingInterface() {
+            loginContainer.style.display = 'none';
+            bankingContainer.style.display = 'block';
+            userFullName.textContent = currentUser.full_name;
+            userBalance.textContent = `$${parseFloat(currentUser.balance).toFixed(2)}`;
+        }
+        
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message to chat
+            appendMessage(message, 'user');
+            messageInput.value = '';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message, 
+                        username: currentUser.username 
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    appendMessage(data.message, 'bot');
+                    
+                    // Refresh user data if it's a transaction or balance related
+                    if (message.toLowerCase().includes('transfer') || 
+                        message.toLowerCase().includes('balance')) {
+                        await refreshUserData();
+                    }
+                } else {
+                    appendMessage(data.message || 'Sorry, I couldn\'t process your request', 'bot');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                appendMessage('Sorry, an error occurred while processing your request', 'bot');
+            }
+        }
+        
+        function appendMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = sender === 'user' ? 'user-message' : 'bot-message';
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        async function refreshUserData() {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        username: currentUser.username, 
+                        password: 'password123' // This is insecure for a real app
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    userBalance.textContent = `$${parseFloat(currentUser.balance).toFixed(2)}`;
+                }
+            } catch (error) {
+                console.error('Error refreshing user data:', error);
+            }
+        }
+        
+        function suggestQuery(element) {
+            messageInput.value = element.textContent;
+            messageInput.focus();
+        }
+    </script>
+</body>
+</html>
